@@ -1,5 +1,7 @@
 """
-FastAPI User Auth API for Agric Scout
+FastAPI User Auth API for Agric Scout.
+
+Features:
 - Register users
 - Login with email
 - Update email
@@ -19,6 +21,7 @@ app = FastAPI()
 
 # -------------------- Models --------------------
 class RegisterRequest(BaseModel):
+    """Model for user registration."""
     firstname: str
     lastname: str
     email: EmailStr
@@ -26,23 +29,32 @@ class RegisterRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
+    """Model for user login."""
     email: EmailStr
     password: str
 
 
 class UpdateEmailRequest(BaseModel):
+    """Model for updating user email."""
     email: EmailStr
     password: str
     new_email: EmailStr
 
 
 class UpdatePasswordRequest(BaseModel):
+    """Model for updating user password."""
     email: EmailStr
     current_password: str
     new_password: str
 
 
-# -------------------- Endpoints --------------------
+# -------------------- Routes --------------------
+@app.get("/")
+def home():
+    """Root route to avoid 404."""
+    return {"message": "Welcome to Agric Scout Auth API"}
+
+
 @app.post("/register")
 def register_user(data: RegisterRequest):
     """Register a new user."""
@@ -56,12 +68,12 @@ def register_user(data: RegisterRequest):
 
         hashed_pw = bcrypt.hashpw(data.password.encode("utf-8"), bcrypt.gensalt())
         cursor.execute(
-            "INSERT INTO users (firstname, lastname, email, password) VALUES (%s, %s, %s, %s)",
+            "INSERT INTO users (firstname, lastname, email, password) "
+            "VALUES (%s, %s, %s, %s)",
             (data.firstname, data.lastname, data.email, hashed_pw.decode("utf-8")),
         )
         conn.commit()
         return {"message": "Registration successful."}
-
     except Error as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     finally:
@@ -85,7 +97,6 @@ def login_user(data: LoginRequest):
             return {"message": f"Login successful. Welcome, {user[1]} {user[2]}!"}
 
         raise HTTPException(status_code=401, detail="Invalid email or password.")
-
     except Error as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     finally:
@@ -100,7 +111,6 @@ def update_email(data: UpdateEmailRequest):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-
         cursor.execute("SELECT * FROM users WHERE email = %s", (data.email,))
         user = cursor.fetchone()
 
@@ -116,12 +126,12 @@ def update_email(data: UpdateEmailRequest):
 
         cursor.execute("UPDATE users SET email = %s WHERE id = %s", (data.new_email, user[0]))
         cursor.execute(
-            "INSERT INTO update_logs (user_id, field_changed, old_value, new_value) VALUES (%s, %s, %s, %s)",
+            "INSERT INTO update_logs (user_id, field_changed, old_value, new_value) "
+            "VALUES (%s, %s, %s, %s)",
             (user[0], "email", data.email, data.new_email),
         )
         conn.commit()
         return {"message": "Email updated successfully."}
-
     except Error as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     finally:
@@ -143,16 +153,20 @@ def update_password(data: UpdatePasswordRequest):
             raise HTTPException(status_code=401, detail="Invalid email or current password.")
 
         hashed_new_pw = bcrypt.hashpw(data.new_password.encode("utf-8"), bcrypt.gensalt())
-        cursor.execute("UPDATE users SET password = %s WHERE id = %s", (hashed_new_pw.decode("utf-8"), user[0]))
         cursor.execute(
-            "INSERT INTO update_logs (user_id, field_changed, old_value, new_value) VALUES (%s, %s, %s, %s)",
+            "UPDATE users SET password = %s WHERE id = %s",
+            (hashed_new_pw.decode("utf-8"), user[0]),
+        )
+        cursor.execute(
+            "INSERT INTO update_logs (user_id, field_changed, old_value, new_value) "
+            "VALUES (%s, %s, %s, %s)",
             (user[0], "password", "****", "****"),
         )
         conn.commit()
         return {"message": "Password updated successfully."}
-
     except Error as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     finally:
         if conn:
             conn.close()
+
