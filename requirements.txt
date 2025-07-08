@@ -4,3 +4,5 @@ bcrypt
 mysql-connector-python
 pydantic
 python-dotenv
+email-validator
+
