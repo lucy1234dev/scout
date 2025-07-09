@@ -15,8 +15,11 @@ from pydantic import BaseModel, EmailStr
 import bcrypt
 from mysql.connector import Error
 from db_config import get_connection
+from cors import apply_cors
 
 app = FastAPI()
+apply_cors(app)
+
 
 
 # -------------------- Models --------------------
