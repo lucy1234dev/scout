@@ -13,7 +13,7 @@ This version is production-ready and Pylint compliant.
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, EmailStr
 import bcrypt
-from mysql.connector import Error
+from psycopg2 import Error
 from db_config import get_connection
 from cors import apply_cors
 
