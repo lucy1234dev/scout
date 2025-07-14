@@ -1,15 +1,13 @@
-# db_config.py
-
-import mysql.connector
+import psycopg2
 
 def get_connection():
-    """Connect to Railway-hosted MySQL database"""
-    return mysql.connector.connect(
-        host="switchyard.proxy.rlwy.net",
-        user="root",
-        password="IfsINkrIvQAOjPQLMptkOZyfvLXdAsSS",
-        database="railway",
-        port=58798
+    return psycopg2.connect(
+        host="dpg-d1qhq52dbo4c73chohd0-",
+        port="5432",
+        user="agric_scout_user",
+        password="LM2YYoWqUkEAXAMlCVzWLub8fBVEWXbd",
+        database="agric_scout"
     )
+
 
 
