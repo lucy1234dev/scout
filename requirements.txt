@@ -1,8 +1,10 @@
 fastapi
 uvicorn
 bcrypt
-mysql-connector-python
+psycopg2-binary
 pydantic
 python-dotenv
 email-validator
+starlette
+
 
