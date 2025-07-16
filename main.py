@@ -138,7 +138,7 @@ def reset_password(data: ResetPasswordRequest):
 
         # Update the user's password
         cursor.execute(
-            "UPDATE users SET password = %s,  WHERE id = %s",
+            "UPDATE users SET password = %s  WHERE id = %s",
             (hashed_password, user_id)
         )
 
