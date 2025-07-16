@@ -8,7 +8,7 @@ def apply_cors(app: FastAPI) -> None:
     Applies CORS middleware and preflight OPTIONS handling.
     """
     origins = [
-        "https://agric-scout.netlify.app",  #  Replace with your real frontend
+        "https://agric-scout2.netlify.app",  #  Replace with your real frontend
         "http://localhost:5500",
         "http://127.0.0.1:5500",
                                 # Local frontend
