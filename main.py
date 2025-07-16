@@ -17,9 +17,11 @@ from psycopg2 import Error
 from db_config import get_connection
 from cors import apply_cors
 
+
+
+
 app = FastAPI()
 apply_cors(app)
-
 
 
 # -------------------- Models --------------------
@@ -44,10 +46,9 @@ class UpdateEmailRequest(BaseModel):
     new_email: EmailStr
 
 
-class UpdatePasswordRequest(BaseModel):
-    """Model for updating user password."""
+class ResetPasswordRequest(BaseModel):
+    """Model for Resetting user password."""
     email: EmailStr
-    current_password: str
     new_password: str
 
 
@@ -76,8 +77,10 @@ def register_user(data: RegisterRequest):
             (data.firstname, data.lastname, data.email, hashed_pw.decode("utf-8")),
         )
         conn.commit()
+        print("user inserted into DB")
         return {"message": "Registration successful."}
     except Error as exc:
+        print("Database error: ", exc)
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     finally:
         if conn:
@@ -107,9 +110,9 @@ def login_user(data: LoginRequest):
             conn.close()
 
 
-@app.put("/update-email")
-def update_email(data: UpdateEmailRequest):
-    """Update user's email address."""
+@app.put("/reset-password")
+def reset_email(data: ResetPasswordRequest = Body(...)):
+    """Reset user's forgottten password."""
     conn = None
     try:
         conn = get_connection()
@@ -117,24 +120,19 @@ def update_email(data: UpdateEmailRequest):
         cursor.execute("SELECT * FROM users WHERE email = %s", (data.email,))
         user = cursor.fetchone()
 
-        if not user or not bcrypt.checkpw(data.password.encode("utf-8"), user[4].encode("utf-8")):
-            raise HTTPException(status_code=401, detail="Invalid email or password.")
+        if not user:
+            raise HTTPException(status_code=404, detail="user with these not found.")
+        hashed_pw = bcrypt.hashpw(data.new_password.encode("utf-8"), bcrypt.gensalt())
 
-        if data.new_email == data.email:
-            raise HTTPException(status_code=400, detail="New email is the same as current.")
-
-        cursor.execute("SELECT * FROM users WHERE email = %s", (data.new_email,))
-        if cursor.fetchone():
-            raise HTTPException(status_code=400, detail="New email already in use.")
-
-        cursor.execute("UPDATE users SET email = %s WHERE id = %s", (data.new_email, user[0]))
         cursor.execute(
-            "INSERT INTO update_logs (user_id, field_changed, old_value, new_value) "
-            "VALUES (%s, %s, %s, %s)",
-            (user[0], "email", data.email, data.new_email),
+            "UPDATE users SET password = %s WHERE email = %s",
+            (hashed_pw.decode("utf-8"), data.email)
+
+
         )
+
         conn.commit()
-        return {"message": "Email updated successfully."}
+        return {"message": "Password reset successfully."}
     except Error as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     finally:
@@ -142,34 +140,8 @@ def update_email(data: UpdateEmailRequest):
             conn.close()
 
 
-@app.put("/update-password")
-def update_password(data: UpdatePasswordRequest):
-    """Update user's password."""
-    conn = None
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email = %s", (data.email,))
-        user = cursor.fetchone()
 
-        if not user or not bcrypt.checkpw(data.current_password.encode("utf-8"), user[4].encode("utf-8")):
-            raise HTTPException(status_code=401, detail="Invalid email or current password.")
 
-        hashed_new_pw = bcrypt.hashpw(data.new_password.encode("utf-8"), bcrypt.gensalt())
-        cursor.execute(
-            "UPDATE users SET password = %s WHERE id = %s",
-            (hashed_new_pw.decode("utf-8"), user[0]),
-        )
-        cursor.execute(
-            "INSERT INTO update_logs (user_id, field_changed, old_value, new_value) "
-            "VALUES (%s, %s, %s, %s)",
-            (user[0], "password", "****", "****"),
-        )
-        conn.commit()
-        return {"message": "Password updated successfully."}
-    except Error as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
-    finally:
-        if conn:
-            conn.close()
+
+
 
