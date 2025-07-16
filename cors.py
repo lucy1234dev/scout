@@ -16,8 +16,8 @@ def apply_cors(app: FastAPI) -> None:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=origins,
-        allow_credentials=False,  # If you use "*", this must be False
+        allow_origins=["https://agric-scout2.netlify.app"],
+        allow_credentials=True,  # If you use "*", this must be False
         allow_methods=["*"],      # GET, POST, PUT, DELETE, OPTIONS, etc.
         allow_headers=["*"],
     )
