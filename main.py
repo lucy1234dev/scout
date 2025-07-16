@@ -10,7 +10,7 @@ Features:
 This version is production-ready and Pylint compliant.
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException,Body
 from pydantic import BaseModel, EmailStr
 import bcrypt
 from psycopg2 import Error
