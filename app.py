@@ -16,6 +16,9 @@ import bcrypt
 from psycopg2 import Error
 from db_config import get_connection
 #from cors_config import apply_cors
+from dotenv import load_dotenv
+load_dotenv()
+
 
 # Initialize app
 router = APIRouter()
