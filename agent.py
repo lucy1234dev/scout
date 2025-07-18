@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from cloudinary.uploader import upload as cloudinary_upload
 #from cloudinary_config import cloudinary
 from db_config import get_connection
@@ -6,10 +6,10 @@ import requests
 #import psycopg2
 import json
 
-app = FastAPI()
+router = APIRouter()
 
 
-HF_TOKEN = "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"
+HF_TOKEN = ""
 HF_MODEL_VISION = "YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection"
 HF_MODEL_TEXT = "google/flan-t5-base"
 TIMEOUT = 60
@@ -61,7 +61,7 @@ def ask_huggingface_question(question: str):
 
 
 
-@app.post("/analyse")
+@router.post("/analyse")
 async def analyse_plants(image: UploadFile = File(...)):
     try:
         # Upload to Cloudinary
@@ -89,7 +89,7 @@ async def analyse_plants(image: UploadFile = File(...)):
 
 
 
-@app.post("/ask")
+@router.post("/ask")
 async def ask_question(question: str = Form(...)):
     try:
         answer = ask_huggingface_question(question)
