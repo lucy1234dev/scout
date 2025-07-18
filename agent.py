@@ -5,12 +5,12 @@ from db_config import get_connection
 import requests
 #import psycopg2
 import json
-import os
+
 
 router = APIRouter()
 
 
-HF_TOKEN = os.getenv("HF_TOKEN")
+HF_TOKEN = ""
 HF_MODEL_VISION = "YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection"
 HF_MODEL_TEXT = "google/flan-t5-base"
 TIMEOUT = 60
