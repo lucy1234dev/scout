@@ -9,5 +9,5 @@ psycopg2-binary
 email-validator
 bcrypt
 python-multipart
-os
+
 
