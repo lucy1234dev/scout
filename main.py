@@ -6,12 +6,14 @@ from cors_config import apply_cors
 
 app = FastAPI(title="Agric Scout API")
 
+# Apply CORS settings
 apply_cors(app)
 
-
+# Include routers
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 app.include_router(ai_router, prefix="/ai", tags=["AI"])
 
+# Root route
 @app.get("/")
 def root():
     return {"message": "Welcome to Agric Scout Backend API"}
