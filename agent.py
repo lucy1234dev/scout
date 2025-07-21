@@ -1,80 +1,73 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from cloudinary.uploader import upload as cloudinary_upload
-#from cloudinary_config import cloudinary
 from db_config import get_connection
 import requests
-#import psycopg2
 import json
 import os
 
-
-
 router = APIRouter()
 
-
-HF_TOKEN = os.getenv("HF_TOKEN")
-HF_MODEL_VISION = "YuchengShi/LLaVA-v1.5-7B-Plant-Leaf-Diseases-Detection"
-HF_MODEL_TEXT = "google/flan-t5-base"
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = "llama3-70b-8192"
 TIMEOUT = 60
-
 
 
 def predict_plant_disease(image_url):
     headers = {
-        "Authorization": f"Bearer {HF_TOKEN}"
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
     }
+
+    messages = [
+        {"role": "system", "content": "You are a plant disease expert."},
+        {"role": "user", "content": f"What plant disease is shown in this image? {image_url}"}
+    ]
+
     payload = {
-        "inputs": {
-            "image": image_url,
-            "text": "what plant disease is this?"
-        }
+        "model": GROQ_MODEL,
+        "messages": messages,
+        "temperature": 0.2
     }
 
     try:
-        response = requests.post(
-            f"https://api-inference.huggingface.co/models/{HF_MODEL_VISION}",
-            headers=headers,
-            json=payload,
-            timeout=TIMEOUT
-        )
+        response = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=TIMEOUT)
         response.raise_for_status()
         return response.json()
     except requests.RequestException as exc:
-        raise HTTPException(status_code=500, detail=f"Error from HuggingFace vision model: {str(exc)}") from exc
+        raise HTTPException(status_code=500, detail=f"Error from Groq vision model: {str(exc)}") from exc
 
 
-
-def ask_huggingface_question(question: str):
+def ask_groq_question(question: str):
     headers = {
-        "Authorization": f"Bearer {HF_TOKEN}"
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
     }
-    payload = {"inputs": question}
+
+    payload = {
+        "model": GROQ_MODEL,
+        "messages": [
+            {"role": "user", "content": question}
+        ],
+        "temperature": 0.7
+    }
 
     try:
-        response = requests.post(
-            f"https://api-inference.huggingface.co/models/{HF_MODEL_TEXT}",
-            headers=headers,
-            json=payload,
-            timeout=TIMEOUT
-        )
+        response = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=TIMEOUT)
         response.raise_for_status()
         return response.json()
     except requests.RequestException as exc:
-        raise HTTPException(status_code=500, detail=f"Error from HuggingFace text model: {str(exc)}") from exc
-
+        raise HTTPException(status_code=500, detail=f"Error from Groq text model: {str(exc)}") from exc
 
 
 @router.post("/analyse")
 async def analyse_plants(image: UploadFile = File(...)):
     try:
-        # Upload to Cloudinary
         upload_result = cloudinary_upload(image.file)
         image_url = upload_result["secure_url"]
 
-        # Predict disease using HuggingFace model
         prediction_result = predict_plant_disease(image_url)
 
-        # Save result to PostgreSQL
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute(
@@ -91,11 +84,10 @@ async def analyse_plants(image: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(exc)}") from exc
 
 
-
 @router.post("/ask")
 async def ask_question(question: str = Form(...)):
     try:
-        answer = ask_huggingface_question(question)
+        answer = ask_groq_question(question)
         return {"question": question, "answer": answer}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Question failed: {str(exc)}") from exc
