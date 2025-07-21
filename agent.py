@@ -1,10 +1,30 @@
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, APIRouter
 from cloudinary.uploader import upload as cloudinary_upload
+import cloudinary
 from db_config import get_connection
 import requests
 import json
 import os
+from dotenv import load_dotenv
 
+#  Load env vars early
+load_dotenv()
+
+#  Configure Cloudinary
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+    secure=True
+)
+
+#  Verify that the env vars loaded
+if not all([os.getenv("CLOUDINARY_CLOUD_NAME"), os.getenv("CLOUDINARY_API_KEY"), os.getenv("CLOUDINARY_API_SECRET")]):
+    raise RuntimeError(" Cloudinary environment variables are missing!")
+
+print("GROQ key loaded?", os.getenv("GROQ_API_KEY") is not None)
+
+app = FastAPI()
 router = APIRouter()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -46,9 +66,7 @@ def ask_groq_question(question: str):
 
     payload = {
         "model": GROQ_MODEL,
-        "messages": [
-            {"role": "user", "content": question}
-        ],
+        "messages": [{"role": "user", "content": question}],
         "temperature": 0.7
     }
 
@@ -91,3 +109,10 @@ async def ask_question(question: str = Form(...)):
         return {"question": question, "answer": answer}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Question failed: {str(exc)}") from exc
+
+
+app.include_router(router)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("agent:app", host="127.0.0.1", port=8000, reload=True)
